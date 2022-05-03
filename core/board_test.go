@@ -20,6 +20,8 @@ func testLoadFen(t *testing.T, fen string) {
 	}
 }
 
+// Tests that a certain position has the expected legal moves
+// and draws the position with the legal moves as 'X's
 func testMoveCount(t *testing.T, fen string, color uint8, expectedMoves int, iteration int) {
 	var board Board
 	board.LoadFen(fen)
@@ -87,23 +89,18 @@ func TestMoveCountFile(t *testing.T) {
 	scanner := bufio.NewScanner(file)
 	line := 0
 	for scanner.Scan() {
-		var board Board
 		words := strings.Split(scanner.Text(), " ")
-		board.LoadFen(words[0])
 		var color uint8
 		if words[1][0] == 'w' {
 			color = c_White
 		} else {
 			color = c_Black
 		}
-		count, moves := board.countLegalMoves(color)
 		expected, err := strconv.Atoi(words[6])
 		if err != nil {
 			panic("Could not parse expected move count")
 		}
-		if expected != count {
-			t.Errorf("\nExpected:%d\n     Got:%d\n  Squares:\n%s", expected, count, board.Draw(&moves))
-		}
+		testMoveCount(t, words[0], color, expected, line)
 		line++
 	}
 	if err := scanner.Err(); err != nil {
@@ -111,12 +108,15 @@ func TestMoveCountFile(t *testing.T) {
 	}
 }
 
-func TestFenStartpos(t *testing.T) {
+func TestFenLoadAndGet(t *testing.T) {
 	testLoadFen(t, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
 }
 
-func TestFenRandom(t *testing.T) {
+func TestFenRandomLoadAndGet(t *testing.T) {
 	for i := 0; i < 100; i++ {
+		// generates a completely random and most likely
+		// illegal fen position with the aim of testing the
+		// fen loading/saving algorithm
 		randomFen := generateFen()
 		testLoadFen(t, randomFen)
 	}
