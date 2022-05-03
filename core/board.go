@@ -1,7 +1,6 @@
 package core
 
 import (
-	"fmt"
 	"strings"
 	"unicode"
 )
@@ -41,14 +40,25 @@ var knightMovesLUT [64]uint64 = [64]uint64{
 }
 
 var knightHeatTable [64]uint8 = [64]uint8{
-	2, 3, 4, 4, 4, 4, 3, 2,
-	3, 4, 6, 6, 6, 6, 4, 3,
-	4, 6, 8, 8, 8, 8, 6, 4,
-	4, 6, 8, 8, 8, 8, 6, 4,
-	4, 6, 8, 8, 8, 8, 6, 4,
-	4, 6, 8, 8, 8, 8, 6, 4,
-	3, 4, 6, 6, 6, 6, 4, 3,
-	2, 3, 4, 4, 4, 4, 3, 2,
+	0x2, 0x3, 0x4, 0x4, 0x4, 0x4, 0x3, 0x2,
+	0x3, 0x4, 0x6, 0x6, 0x6, 0x6, 0x4, 0x3,
+	0x4, 0x6, 0x8, 0x8, 0x8, 0x8, 0x6, 0x4,
+	0x4, 0x6, 0x8, 0x8, 0x8, 0x8, 0x6, 0x4,
+	0x4, 0x6, 0x8, 0x8, 0x8, 0x8, 0x6, 0x4,
+	0x4, 0x6, 0x8, 0x8, 0x8, 0x8, 0x6, 0x4,
+	0x3, 0x4, 0x6, 0x6, 0x6, 0x6, 0x4, 0x3,
+	0x2, 0x3, 0x4, 0x4, 0x4, 0x4, 0x3, 0x2,
+}
+
+var bishopHeatTable [64]uint8 = [64]uint8{
+	0x7, 0x7, 0x7, 0x7, 0x7, 0x7, 0x7, 0x7,
+	0x7, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x7,
+	0x7, 0x9, 0xB, 0xB, 0xB, 0xB, 0x9, 0x7,
+	0x7, 0x9, 0xB, 0xD, 0xD, 0xB, 0x9, 0x7,
+	0x7, 0x9, 0xB, 0xD, 0xD, 0xB, 0x9, 0x7,
+	0x7, 0x9, 0xB, 0xB, 0xB, 0xB, 0x9, 0x7,
+	0x7, 0x9, 0x9, 0x9, 0x9, 0x9, 0x9, 0x7,
+	0x7, 0x7, 0x7, 0x7, 0x7, 0x7, 0x7, 0x7,
 }
 
 func getPieceChar(piece uint8) rune {
@@ -152,18 +162,28 @@ func (board *Board) GetFen() string {
 	return sb.String()
 }
 
-func (board *Board) Draw() {
-	fmt.Println("----------------")
+func (board *Board) Draw(legalMoves *[]uint8) string {
+	var sb strings.Builder
+	sb.WriteString("----------------\n")
+	var legalMoveTable [64]bool
+	for _, sq := range *legalMoves {
+		legalMoveTable[sq] = true
+	}
 	for x, y := 0, 0; y < 64; {
-		fmt.Printf("|%c", getPieceChar(board[x+y]))
+		if legalMoveTable[x+y] {
+			sb.WriteString("|X")
+		} else {
+			sb.WriteString("|" + string(getPieceChar(board[x+y])))
+		}
 		x++
 		if x == 8 {
-			fmt.Println("|")
+			sb.WriteString("|\n")
 			y += 8
 			x = 0
-			fmt.Println("----------------")
+			sb.WriteString("----------------\n")
 		}
 	}
+	return sb.String()
 }
 
 func (board *Board) getLegalMoves(index uint8) []uint8 {
@@ -171,48 +191,72 @@ func (board *Board) getLegalMoves(index uint8) []uint8 {
 	ret := make([]uint8, 0, 64)
 	switch piece & PIECE_MASK {
 	case p_Pawn:
-		if piece&COLOR_MASK == c_White {
-			// assuming pawn index always > 7
-			// because otherwise it promotes
-			col := board[index-8] & COLOR_MASK
-			if col == c_Empty {
-				ret = append(ret, index-8)
-			}
-			if index >= 48 {
-				col := board[index-16] & COLOR_MASK
-				if col == c_Empty {
-					ret = append(ret, index-16)
-				}
-			}
-		} else {
-			// assuming pawn index always > 56
-			// because otherwise it promotes
-			col := board[index+8] & COLOR_MASK
-			if col == c_Empty {
-				ret = append(ret, index+8)
-			}
-			if index <= 15 {
-				col := board[index+16] & COLOR_MASK
-				if col == c_Empty {
-					ret = append(ret, index+16)
-				}
-			}
-		}
+		board.appendPawnMoves(&ret, index, piece&COLOR_MASK)
 	case p_Knight:
 		board.appendKnightMoves(&ret, index, piece&COLOR_MASK)
+	case p_Bishop:
+		board.appendBishopMoves(&ret, index, piece&COLOR_MASK)
 	}
 	return ret
 }
 
-func (board *Board) countLegalMoves(color uint8) int {
+func (board *Board) countLegalMoves(color uint8) (int, []uint8) {
 	count := 0
+	var moves []uint8
 	for i := uint8(0); i < 64; i++ {
 		if board[i]&COLOR_MASK == color {
-			moves := board.getLegalMoves(i)
-			count += len(moves)
+			newMoves := board.getLegalMoves(i)
+			moves = append(moves, newMoves...)
 		}
 	}
-	return count
+	count = len(moves)
+	return count, moves
+}
+
+func (board *Board) appendPawnMoves(moves *[]uint8, square uint8, color uint8) {
+	if color == c_White {
+		// assuming pawn square always > 7
+		// because otherwise it promotes
+		col := board[square-8] & COLOR_MASK
+		if col == c_Empty {
+			*moves = append(*moves, square-8)
+		}
+		// col_l := board[square-9] & COLOR_MASK
+		// col_r := board[square-7] & COLOR_MASK
+		// if col_l == c_Black {
+		// 	*moves = append(*moves, square-9)
+		// }
+		// if col_r == c_Black {
+		// 	*moves = append(*moves, square-7)
+		// }
+		if square >= 48 {
+			col := board[square-16] & COLOR_MASK
+			if col == c_Empty {
+				*moves = append(*moves, square-16)
+			}
+		}
+	} else {
+		// assuming pawn square always > 56
+		// because otherwise it promotes
+		col := board[square+8] & COLOR_MASK
+		if col == c_Empty {
+			*moves = append(*moves, square+8)
+		}
+		// col_l := board[square+7] & COLOR_MASK
+		// col_r := board[square+9] & COLOR_MASK
+		// if col_l == c_White {
+		// 	*moves = append(*moves, square+7)
+		// }
+		// if col_r == c_White {
+		// 	*moves = append(*moves, square+9)
+		// }
+		if square <= 15 {
+			col := board[square+16] & COLOR_MASK
+			if col == c_Empty {
+				*moves = append(*moves, square+16)
+			}
+		}
+	}
 }
 
 func (board *Board) appendKnightMoves(moves *[]uint8, square uint8, color uint8) {
@@ -220,7 +264,51 @@ func (board *Board) appendKnightMoves(moves *[]uint8, square uint8, color uint8)
 	for i := 0; i < 8; i++ {
 		cur := uint8(kmoves >> (i * 8))
 		if ((cur & 0x80) == 0x80) && ((board[cur-0x80] & COLOR_MASK) != color) {
-			*moves = append(*moves, cur&0x1F)
+			*moves = append(*moves, cur-0x80)
+		}
+	}
+}
+
+func (board *Board) appendBishopMoves(moves *[]uint8, square uint8, color uint8) {
+	firstRow := square & 7
+	for i := square - 9; i <= 63; i -= 9 {
+		if i&7 >= firstRow {
+			break
+		}
+		if (board[i] & COLOR_MASK) != color {
+			*moves = append(*moves, i)
+		} else {
+			break
+		}
+	}
+	for i := square - 7; i <= 63; i -= 7 {
+		if i&7 <= firstRow {
+			break
+		}
+		if (board[i] & COLOR_MASK) != color {
+			*moves = append(*moves, i)
+		} else {
+			break
+		}
+	}
+	for i := square + 9; i <= 63; i += 9 {
+		if i&7 <= firstRow {
+			break
+		}
+		if (board[i] & COLOR_MASK) != color {
+			*moves = append(*moves, i)
+		} else {
+			break
+		}
+	}
+	for i := square + 7; i <= 63; i += 7 {
+		if i&7 >= firstRow {
+			break
+		}
+		if (board[i] & COLOR_MASK) != color {
+			*moves = append(*moves, i)
+		} else {
+			break
 		}
 	}
 }
