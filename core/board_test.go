@@ -3,12 +3,10 @@ package core
 import (
 	"bufio"
 	"log"
-	"math/rand"
 	"os"
 	"strconv"
 	"strings"
 	"testing"
-	"time"
 )
 
 func testLoadFen(t *testing.T, fen string) {
@@ -29,26 +27,6 @@ func testMoveCount(t *testing.T, fen string, color uint8, expectedMoves int, ite
 	if res != expectedMoves {
 		t.Errorf("\nSquare: %d\nExpected:%d\n     Got:%d\n   Table:\n%s", iteration, expectedMoves, res, board.Draw(&moves))
 	}
-}
-
-func randomPiece() rune {
-	var piece uint8 = 1 << rand.Intn(6)
-	var color uint8 = 64 * uint8(rand.Intn(2))
-	return getPieceChar(piece | color)
-}
-
-func generateFen() string {
-	rand.Seed(time.Now().UnixNano())
-	var sb strings.Builder
-	for j := 0; j < 8; j++ {
-		for i := 0; i < 8; i++ {
-			sb.WriteRune(randomPiece())
-			if i == 7 && j != 7 {
-				sb.WriteRune('/')
-			}
-		}
-	}
-	return sb.String()
 }
 
 func generatePieceFen(square int, expectedTable *[64]uint8, piece rune) (string, int) {
@@ -76,7 +54,10 @@ func generatePieceFen(square int, expectedTable *[64]uint8, piece rune) (string,
 			}
 		}
 	}
-	expected := int(expectedTable[square])
+	expected := 0
+	if expectedTable != nil {
+		expected = int(expectedTable[square])
+	}
 	return sb.String(), expected
 }
 
@@ -112,13 +93,18 @@ func TestFenLoadAndGet(t *testing.T) {
 	testLoadFen(t, "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR")
 }
 
-func TestFenRandomLoadAndGet(t *testing.T) {
-	for i := 0; i < 100; i++ {
-		// generates a completely random and most likely
-		// illegal fen position with the aim of testing the
-		// fen loading/saving algorithm
-		randomFen := generateFen()
-		testLoadFen(t, randomFen)
+func TestMoveCountQueen(t *testing.T) {
+	for i := 0; i < 64; i++ {
+		fen, expected := generatePieceFen(i, &queenHeatTable, 'Q')
+		testMoveCount(t, fen, c_White, expected, i)
+	}
+}
+
+func TestMoveCountRook(t *testing.T) {
+	for i := 0; i < 64; i++ {
+		// rook always has 14 possible moves on an empty board
+		fen, _ := generatePieceFen(i, nil, 'R')
+		testMoveCount(t, fen, c_White, 14, i)
 	}
 }
 

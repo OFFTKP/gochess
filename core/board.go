@@ -61,6 +61,8 @@ var bishopHeatTable [64]uint8 = [64]uint8{
 	0x7, 0x7, 0x7, 0x7, 0x7, 0x7, 0x7, 0x7,
 }
 
+var queenHeatTable [64]uint8 = [64]uint8{}
+
 func getPieceChar(piece uint8) rune {
 	switch piece {
 	case p_Pawn | c_Black:
@@ -196,6 +198,11 @@ func (board *Board) getLegalMoves(index uint8) []uint8 {
 		board.appendKnightMoves(&ret, index, piece&COLOR_MASK)
 	case p_Bishop:
 		board.appendBishopMoves(&ret, index, piece&COLOR_MASK)
+	case p_Rook:
+		board.appendRookMoves(&ret, index, piece&COLOR_MASK)
+	case p_Queen:
+		board.appendBishopMoves(&ret, index, piece&COLOR_MASK)
+		board.appendRookMoves(&ret, index, piece&COLOR_MASK)
 	}
 	return ret
 }
@@ -255,6 +262,51 @@ func (board *Board) appendPawnMoves(moves *[]uint8, square uint8, color uint8) {
 			if col == c_Empty {
 				*moves = append(*moves, square+16)
 			}
+		}
+	}
+}
+
+func (board *Board) appendRookMoves(moves *[]uint8, square uint8, color uint8) {
+	firstRow := square & 7
+	firstCol := square & ^uint8(7)
+	for i := square - 1; i <= 63; i -= 1 {
+		if i&7 >= firstRow {
+			break
+		}
+		if (board[i] & COLOR_MASK) != color {
+			*moves = append(*moves, i)
+		} else {
+			break
+		}
+	}
+	for i := square + 1; i <= 63; i += 1 {
+		if i&7 <= firstRow {
+			break
+		}
+		if (board[i] & COLOR_MASK) != color {
+			*moves = append(*moves, i)
+		} else {
+			break
+		}
+	}
+	for i := square - 8; i <= 63; i -= 8 {
+		if i&^uint8(7) >= firstCol {
+			break
+		}
+		if (board[i] & COLOR_MASK) != color {
+			*moves = append(*moves, i)
+		} else {
+			break
+		}
+	}
+	for i := square + 8; i <= 63; i += 8 {
+		if i&^uint8(7) <= firstCol {
+			break
+		}
+		if (board[i] & COLOR_MASK) != color {
+			*moves = append(*moves, i)
+		} else {
+			break
 		}
 	}
 }
