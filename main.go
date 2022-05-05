@@ -82,6 +82,8 @@ func loadImages() {
 
 func main() {
 	var board core.Board
-	board.LoadFen("r1b1k3/pp1p1prp/q1n1pbpn/2p5/4P1BB/P1QP1N2/1PP1NPP1/R5RK w - - 0 0")
+	board.LoadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+	ret := board.MakeMove(0, 8, 56)
+	board.UnmakeMove(ret, 0, 8, 56)
 	outputCurrentImage(&board)
 }

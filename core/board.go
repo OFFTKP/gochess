@@ -1,8 +1,10 @@
 package core
 
 import (
+	"math/rand"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 )
 
@@ -25,15 +27,37 @@ type Board struct {
 	blackKnights uint64
 	blackBishops uint64
 	blackRooks   uint64
-	blackQueen   uint64
+	blackQueens  uint64
 	blackKing    uint64
 
 	whitePawns   uint64
 	whiteKnights uint64
 	whiteBishops uint64
 	whiteRooks   uint64
-	whiteQueen   uint64
+	whiteQueens  uint64
 	whiteKing    uint64
+
+	blackPawnHashMap   [64]uint64
+	blackKnightHashMap [64]uint64
+	blackBishopHashMap [64]uint64
+	blackRookHashMap   [64]uint64
+	blackQueenHashMap  [64]uint64
+	blackKingHashMap   [64]uint64
+
+	whitePawnHashMap   [64]uint64
+	whiteKnightHashMap [64]uint64
+	whiteBishopHashMap [64]uint64
+	whiteRookHashMap   [64]uint64
+	whiteQueenHashMap  [64]uint64
+	whiteKingHashMap   [64]uint64
+	nextColorHashMap   [2]uint64  // 0 - white, 1 - black
+	castlingHashMap    [16]uint64 // 0000 KQkq bits for speed
+	enPassantHashMap   [8]uint64  // to indicate the file of the en passant square
+
+	// maps for all piece types (0-11) to avoid branching
+	PieceBBmap   [12]*uint64
+	PieceHashmap [12]*[64]uint64
+	zobristHash  uint64
 
 	// general bitboards of all bitmaps together
 	whiteSquares uint64
@@ -41,25 +65,74 @@ type Board struct {
 	emptySquares uint64
 
 	whiteKingsideCastle, whiteQueensideCastle,
-	blackKingsideCastle, blackQueensideCastle bool
+	blackKingsideCastle, blackQueensideCastle int
 
-	PieceBBmap      [12]*uint64
 	nextColor       int
 	enPassantSquare uint8
+	enPassantCol    uint8
 	halfmoveClock   int
 	fullmoveNumber  int
 }
 
 func (board *Board) init() {
 	board.PieceBBmap = [12]*uint64{
-		&board.whitePawns, &board.whiteKnights, &board.whiteBishops, &board.whiteRooks, &board.whiteQueen, &board.whiteKing,
-		&board.blackPawns, &board.blackKnights, &board.blackBishops, &board.blackRooks, &board.blackQueen, &board.blackKing,
+		&board.whitePawns, &board.whiteKnights, &board.whiteBishops, &board.whiteRooks, &board.whiteQueens, &board.whiteKing,
+		&board.blackPawns, &board.blackKnights, &board.blackBishops, &board.blackRooks, &board.blackQueens, &board.blackKing,
 	}
-	board.blackKingsideCastle = false
-	board.blackQueensideCastle = false
-	board.whiteKingsideCastle = false
-	board.whiteQueensideCastle = false
+	board.blackKingsideCastle = 0
+	board.blackQueensideCastle = 0
+	board.whiteKingsideCastle = 0
+	board.whiteQueensideCastle = 0
 	board.enPassantSquare = 0xFF
+	rand.Seed(time.Now().UnixNano())
+	for i := 0; i < 64; i++ {
+		board.whitePawnHashMap[i] = rand.Uint64()
+		board.whiteKnightHashMap[i] = rand.Uint64()
+		board.whiteBishopHashMap[i] = rand.Uint64()
+		board.whiteRookHashMap[i] = rand.Uint64()
+		board.whiteQueenHashMap[i] = rand.Uint64()
+		board.whiteKingHashMap[i] = rand.Uint64()
+		board.blackPawnHashMap[i] = rand.Uint64()
+		board.blackKnightHashMap[i] = rand.Uint64()
+		board.blackBishopHashMap[i] = rand.Uint64()
+		board.blackRookHashMap[i] = rand.Uint64()
+		board.blackQueenHashMap[i] = rand.Uint64()
+		board.blackKingHashMap[i] = rand.Uint64()
+	}
+	board.nextColorHashMap[0] = rand.Uint64()
+	board.nextColorHashMap[1] = rand.Uint64()
+	for i := 0; i < 4; i++ {
+		board.castlingHashMap[i] = rand.Uint64()
+	}
+	for i := 0; i < 8; i++ {
+		board.enPassantHashMap[i] = rand.Uint64()
+	}
+	board.PieceHashmap = [12]*[64]uint64{
+		&board.whitePawnHashMap, &board.whiteKnightHashMap, &board.whiteBishopHashMap, &board.whiteRookHashMap, &board.whiteQueenHashMap, &board.whiteKingHashMap,
+		&board.blackPawnHashMap, &board.blackKnightHashMap, &board.blackBishopHashMap, &board.blackRookHashMap, &board.blackQueenHashMap, &board.blackKingHashMap,
+	}
+}
+
+func (board *Board) recalculateZobrist() {
+	board.zobristHash = 0
+	for i := 0; i < 64; i++ {
+		if (board.emptySquares>>i)&1 == 0 {
+			for j := 0; j < 12; j++ {
+				if ((*board.PieceBBmap[j] >> i) & 1) != 0 {
+					board.zobristHash ^= (*board.PieceHashmap[j])[i]
+					break
+				}
+			}
+		}
+	}
+	if board.nextColor == c_White {
+		board.zobristHash ^= board.nextColorHashMap[0]
+	} else {
+		board.zobristHash ^= board.nextColorHashMap[1]
+	}
+	castling := board.whiteKingsideCastle<<3 | board.whiteQueensideCastle<<2 | board.blackKingsideCastle<<1 | board.blackQueensideCastle
+	board.zobristHash ^= board.castlingHashMap[castling]
+	board.zobristHash ^= board.enPassantHashMap[board.enPassantCol]
 }
 
 func getPieceChar(piece uint8) rune {
@@ -95,8 +168,8 @@ func getPieceChar(piece uint8) rune {
 // function that recalculates the occupying maps
 // to be run after changing the board state
 func (board *Board) recalculateGeneralMaps() {
-	board.whiteSquares = board.whitePawns | board.whiteKnights | board.whiteBishops | board.whiteRooks | board.whiteQueen | board.whiteKing
-	board.blackSquares = board.blackPawns | board.blackKnights | board.blackBishops | board.blackRooks | board.blackQueen | board.blackKing
+	board.whiteSquares = board.whitePawns | board.whiteKnights | board.whiteBishops | board.whiteRooks | board.whiteQueens | board.whiteKing
+	board.blackSquares = board.blackPawns | board.blackKnights | board.blackBishops | board.blackRooks | board.blackQueens | board.blackKing
 	board.emptySquares = (^board.whiteSquares) & (^board.blackSquares)
 }
 
@@ -139,17 +212,18 @@ func (board *Board) LoadFen(fen string) (bool, string) {
 	for _, ch := range fenCastling {
 		switch ch {
 		case 'k':
-			board.blackKingsideCastle = true
+			board.blackKingsideCastle = 1
 		case 'q':
-			board.blackQueensideCastle = true
+			board.blackQueensideCastle = 1
 		case 'K':
-			board.whiteKingsideCastle = true
+			board.whiteKingsideCastle = 1
 		case 'Q':
-			board.whiteQueensideCastle = true
+			board.whiteQueensideCastle = 1
 		}
 	}
 	if len(fenSplit[3]) == 2 {
 		board.enPassantSquare = algebraicToUint8(fenSplit[3])
+		board.enPassantCol = board.enPassantSquare & 0b111
 	}
 	{
 		clk, err := strconv.Atoi(fenSplit[4])
@@ -204,10 +278,11 @@ func (board *Board) LoadFen(fen string) (bool, string) {
 			y -= 8
 		}
 	}
-	board.recalculateGeneralMaps()
 	if x != 8 && y != 0 {
 		return false, "Not enough or too many pieces in FEN"
 	}
+	board.recalculateGeneralMaps()
+	board.recalculateZobrist()
 	return true, ""
 }
 
@@ -257,19 +332,19 @@ func (board *Board) GetFen() string {
 	}
 	sb.WriteRune(' ')
 	castleCount := 0
-	if board.whiteKingsideCastle {
+	if board.whiteKingsideCastle == 1 {
 		sb.WriteRune('K')
 		castleCount++
 	}
-	if board.whiteQueensideCastle {
+	if board.whiteQueensideCastle == 1 {
 		sb.WriteRune('Q')
 		castleCount++
 	}
-	if board.blackKingsideCastle {
+	if board.blackKingsideCastle == 1 {
 		sb.WriteRune('k')
 		castleCount++
 	}
-	if board.blackQueensideCastle {
+	if board.blackQueensideCastle == 1 {
 		sb.WriteRune('q')
 		castleCount++
 	}
@@ -283,4 +358,55 @@ func (board *Board) GetFen() string {
 	sb.WriteRune(' ')
 	sb.WriteString(strconv.Itoa(board.fullmoveNumber))
 	return sb.String()
+}
+
+// returns -1 if no piece is captured, or > -1 if a piece is captured and the index of
+// the corresponding bitboard
+func (board *Board) MakeMove(bitboardIndex uint8, oldSquare, newSquare uint8) int {
+	var ret int = -1
+	oldBitCheck := uint64(1) << oldSquare
+	// remove the moving piece from hash
+	board.zobristHash ^= (*board.PieceHashmap[bitboardIndex])[oldSquare]
+	// remove the moving piece from bitboard
+	*board.PieceBBmap[bitboardIndex] &= ^oldBitCheck
+	// set the empty square bit
+	board.emptySquares |= oldBitCheck
+	// find if new square contains a piece thats being captured
+	// 0 meaning its not empty here
+	bitCheck := uint64(1) << newSquare
+	if (board.emptySquares & bitCheck) == 0 {
+		// find which piece it is
+		for ret = 0; ; /* no test */ ret++ {
+			if (*board.PieceBBmap[ret] & bitCheck) != 0 {
+				break
+			}
+		}
+		// remove the captured piece from hash
+		board.zobristHash ^= (*board.PieceHashmap[ret])[newSquare]
+		// remove the captured piece from bitboard
+		*board.PieceBBmap[ret] &= ^bitCheck
+	} else {
+		board.emptySquares &= ^bitCheck
+	}
+	board.zobristHash ^= (*board.PieceHashmap[bitboardIndex])[newSquare]
+	*board.PieceBBmap[bitboardIndex] |= uint64(1) << newSquare
+	return ret
+}
+
+func (board *Board) UnmakeMove(oldCapture int, bitboardIndex uint8, oldSquare, newSquare uint8) {
+	board.zobristHash ^= (*board.PieceHashmap[bitboardIndex])[newSquare]
+	bitCheck := uint64(1) << newSquare
+	*board.PieceBBmap[bitboardIndex] &= ^bitCheck
+	if oldCapture != -1 {
+		board.zobristHash ^= (*board.PieceHashmap[oldCapture])[newSquare]
+		*board.PieceBBmap[oldCapture] |= bitCheck
+	} else {
+		// new square did not use to contain a piece so set empty bit
+		board.emptySquares |= bitCheck
+	}
+	oldBitCheck := uint64(1) << oldSquare
+	board.zobristHash ^= (*board.PieceHashmap[bitboardIndex])[oldSquare]
+	*board.PieceBBmap[bitboardIndex] |= oldBitCheck
+	// unset empty bit, old square is now occupied
+	board.emptySquares &= ^oldBitCheck
 }

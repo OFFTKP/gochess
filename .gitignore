@@ -1,4 +1,6 @@
 *.test
 *.out
 .vscode/
+build/
 out.png
+vendor/
