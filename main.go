@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	"os"
 
@@ -82,8 +83,9 @@ func loadImages() {
 
 func main() {
 	var board core.Board
-	board.LoadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
-	ret := board.MakeMove(0, 8, 56)
-	board.UnmakeMove(ret, 0, 8, 56)
+	board.LoadFen("rnbqkbnr/pppppppp/8/8/4P3/8/1PPPPPPP/RNBQKBNR w KQkq - 0 1")
+	ret := board.SinglePushTargets(0)
+	ret |= board.DoublePushTargets(0)
+	fmt.Printf("%016x", ret)
 	outputCurrentImage(&board)
 }

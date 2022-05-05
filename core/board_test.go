@@ -93,8 +93,8 @@ func TestMakeUnmakeMove(t *testing.T) {
 	for i := uint8(0); i < 8; i++ {
 		oldZobrist := board.zobristHash
 		oldEmpty := board.emptySquares
-		ret := board.MakeMove(0, 8+i, 40+i)
-		board.UnmakeMove(ret, 0, 8+i, 40+i)
+		ret := board.MakeMove(0, 8+i, 50+i)
+		board.UnmakeMove(ret, 0, 8+i, 50+i)
 		newFen := board.GetFen()
 		if oldZobrist != board.zobristHash {
 			t.Errorf("\nBad zobrist hash\nExpected:%016x\n      Got:%016x", oldZobrist, board.zobristHash)
