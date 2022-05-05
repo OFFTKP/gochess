@@ -43,7 +43,7 @@ type Board struct {
 	whiteKingsideCastle, whiteQueensideCastle,
 	blackKingsideCastle, blackQueensideCastle bool
 
-	pieceBBmap      [12]*uint64
+	PieceBBmap      [12]*uint64
 	nextColor       int
 	enPassantSquare uint8
 	halfmoveClock   int
@@ -51,7 +51,7 @@ type Board struct {
 }
 
 func (board *Board) init() {
-	board.pieceBBmap = [12]*uint64{
+	board.PieceBBmap = [12]*uint64{
 		&board.whitePawns, &board.whiteKnights, &board.whiteBishops, &board.whiteRooks, &board.whiteQueen, &board.whiteKing,
 		&board.blackPawns, &board.blackKnights, &board.blackBishops, &board.blackRooks, &board.blackQueen, &board.blackKing,
 	}
@@ -196,7 +196,7 @@ func (board *Board) LoadFen(fen string) (bool, string) {
 			y -= 8
 			continue
 		}
-		pieceMap := board.pieceBBmap[piece+color]
+		pieceMap := board.PieceBBmap[piece+color]
 		*pieceMap |= 1 << (x + y)
 		x += 1
 		if x > 8 {
@@ -220,7 +220,7 @@ func (board *Board) GetFen() string {
 			curIndex := x + (y * 8)
 			curPiece := ' '
 			for j := uint8(0); j < 12; j++ {
-				curBB := board.pieceBBmap[j]
+				curBB := board.PieceBBmap[j]
 				if ((*curBB) & (1 << curIndex)) != 0 {
 					curPiece = getPieceChar(j)
 					break
