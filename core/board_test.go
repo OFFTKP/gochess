@@ -93,14 +93,22 @@ func TestMakeUnmakeMove(t *testing.T) {
 	for i := uint8(0); i < 8; i++ {
 		oldZobrist := board.zobristHash
 		oldEmpty := board.emptySquares
-		ret := board.MakeMove(0, 8+i, 50+i)
-		board.UnmakeMove(ret, 0, 8+i, 50+i)
+		oldWhite := board.whiteSquares
+		oldBlack := board.blackSquares
+		ret := board.makeMove(0, 8+i, 50+i)
+		board.unmakeMove(ret, 0, 8+i, 50+i)
 		newFen := board.GetFen()
 		if oldZobrist != board.zobristHash {
 			t.Errorf("\nBad zobrist hash\nExpected:%016x\n      Got:%016x", oldZobrist, board.zobristHash)
 		}
 		if oldEmpty != board.emptySquares {
 			t.Errorf("\nBad empty bitboard\nExpected:%016x\n      Got:%016x", oldEmpty, board.emptySquares)
+		}
+		if oldWhite != board.whiteSquares {
+			t.Errorf("\nBad white bitboard\nExpected:%016x\n      Got:%016x", oldWhite, board.whiteSquares)
+		}
+		if oldBlack != board.blackSquares {
+			t.Errorf("\nBad black bitboard\nExpected:%016x\n      Got:%016x", oldBlack, board.blackSquares)
 		}
 		if oldFen != newFen {
 			t.Errorf("\nBad zobrist hash\nExpected:%s\n     Got:%s", oldFen, newFen)
@@ -113,8 +121,8 @@ func BenchmarkMakeUnmakeMove(b *testing.B) {
 	board.LoadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 	for i := 0; i < b.N; i++ {
 		for j := uint8(0); j < 7; j++ {
-			ret := board.MakeMove(0, 8, 16+j)
-			board.UnmakeMove(ret, 0, 8, 16+j)
+			ret := board.makeMove(0, 8, 16+j)
+			board.unmakeMove(ret, 0, 8, 16+j)
 		}
 	}
 }

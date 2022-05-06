@@ -362,15 +362,13 @@ func (board *Board) GetFen() string {
 
 // returns -1 if no piece is captured, or > -1 if a piece is captured and the index of
 // the corresponding bitboard
-func (board *Board) MakeMove(bitboardIndex uint8, oldSquare, newSquare uint8) int {
+func (board *Board) makeMove(bitboardIndex uint8, oldSquare, newSquare uint8) int {
 	var ret int = -1
 	oldBitCheck := uint64(1) << oldSquare
 	// remove the moving piece from hash
 	board.zobristHash ^= (*board.PieceHashmap[bitboardIndex])[oldSquare]
 	// remove the moving piece from bitboard
 	*board.PieceBBmap[bitboardIndex] &= ^oldBitCheck
-	// set the empty square bit
-	board.emptySquares |= oldBitCheck
 	// find if new square contains a piece thats being captured
 	// 0 meaning its not empty here
 	bitCheck := uint64(1) << newSquare
@@ -385,28 +383,23 @@ func (board *Board) MakeMove(bitboardIndex uint8, oldSquare, newSquare uint8) in
 		board.zobristHash ^= (*board.PieceHashmap[ret])[newSquare]
 		// remove the captured piece from bitboard
 		*board.PieceBBmap[ret] &= ^bitCheck
-	} else {
-		board.emptySquares &= ^bitCheck
 	}
 	board.zobristHash ^= (*board.PieceHashmap[bitboardIndex])[newSquare]
 	*board.PieceBBmap[bitboardIndex] |= uint64(1) << newSquare
+	board.recalculateGeneralMaps()
 	return ret
 }
 
-func (board *Board) UnmakeMove(oldCapture int, bitboardIndex uint8, oldSquare, newSquare uint8) {
+func (board *Board) unmakeMove(oldCapture int, bitboardIndex uint8, oldSquare, newSquare uint8) {
 	board.zobristHash ^= (*board.PieceHashmap[bitboardIndex])[newSquare]
 	bitCheck := uint64(1) << newSquare
 	*board.PieceBBmap[bitboardIndex] &= ^bitCheck
 	if oldCapture != -1 {
 		board.zobristHash ^= (*board.PieceHashmap[oldCapture])[newSquare]
 		*board.PieceBBmap[oldCapture] |= bitCheck
-	} else {
-		// new square did not use to contain a piece so set empty bit
-		board.emptySquares |= bitCheck
 	}
 	oldBitCheck := uint64(1) << oldSquare
 	board.zobristHash ^= (*board.PieceHashmap[bitboardIndex])[oldSquare]
 	*board.PieceBBmap[bitboardIndex] |= oldBitCheck
-	// unset empty bit, old square is now occupied
-	board.emptySquares &= ^oldBitCheck
+	board.recalculateGeneralMaps()
 }
