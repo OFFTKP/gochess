@@ -10,7 +10,7 @@ func (board *Board) alphaBetaMax(alpha, beta, depthLeft int) int {
 	if depthLeft == 0 {
 		return board.evaluate()
 	}
-	for { // (all moves)
+	for i := 0; i < 20; i++ { // (all moves)
 		//board.makeMove()
 		score := board.alphaBetaMin(alpha, beta, depthLeft-1)
 		//board.unmakeMove()
@@ -28,7 +28,7 @@ func (board *Board) alphaBetaMin(alpha, beta, depthLeft int) int {
 	if depthLeft == 0 {
 		return board.evaluate()
 	}
-	for { // (all moves)
+	for i := 0; i < 20; i++ { // (all moves)
 		//board.makeMove()
 		score := board.alphaBetaMax(alpha, beta, depthLeft-1)
 		//board.unmakeMove()

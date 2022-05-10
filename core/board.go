@@ -1,6 +1,7 @@
 package core
 
 import (
+	"math"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -21,6 +22,8 @@ const (
 	c_White = 0
 	c_Black = 6
 )
+
+var piecePower [6]int = [6]int{100, 300, 300, 500, 900, math.MaxInt32}
 
 type Board struct {
 	blackPawns   uint64
