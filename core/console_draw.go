@@ -32,6 +32,7 @@ func DrawBitboard(t *testing.T, bb uint64) {
 func (board *Board) DrawChessboard(t *testing.T) {
 	var boardDraw [64]byte
 	for i := 0; i < 64; i++ {
+		boardDraw[i] = '_'
 		bitCheck := uint64(1) << i
 		if (board.emptySquares & bitCheck) == 0 {
 			for p := 0; p < 12; p++ {

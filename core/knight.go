@@ -3,13 +3,13 @@ package core
 import "math/bits"
 
 // Returns a bitboard of all the knight moves for all the knights
-func (board *Board) generateKnightMoves(color int) uint64 {
+func (board *Board) generateKnightMoves() uint64 {
 	knights := *board.PieceBBmap[board.nextColor+p_Knight]
 	var ret uint64
 	for knights != 0 {
 		bit := bits.TrailingZeros64(knights)
 		// Get moves & not occupied squares (by flipping our color bitboard)
-		ret |= knightMovesPerSquare[bit] & (^(*board.ColorBBmap[color]))
+		ret |= knightMovesPerSquare[bit] & (^(*board.ColorBBmap[board.nextColor]))
 		knights ^= 1 << bit
 	}
 	return ret
@@ -26,7 +26,7 @@ var knightMovesPerSquare [64]uint64 = [64]uint64{
 	0x0004020000000000, 0x0008050000000000, 0x00110a0000000000, 0x0022140000000000, 0x0044280000000000, 0x0088500000000000, 0x0010a00000000000, 0x0020400000000000,
 }
 
-var knightHeatTable [64]uint8 = [64]uint8{
+var knightMoveCountTable [64]uint8 = [64]uint8{
 	2, 3, 4, 4, 4, 4, 3, 2,
 	3, 4, 6, 6, 6, 6, 4, 3,
 	4, 6, 8, 8, 8, 8, 6, 4,
