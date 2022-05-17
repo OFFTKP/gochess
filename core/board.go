@@ -118,6 +118,10 @@ func (board *Board) init() {
 	}
 }
 
+func (board *Board) Reset() {
+	// TODO: implement what happens on ucinewgame?
+}
+
 func (board *Board) recalculateZobrist() {
 	board.zobristHash = 0
 	emptyCopy := board.emptySquares

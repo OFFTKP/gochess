@@ -36,7 +36,7 @@ func getPieceChar(piece uint8) rune {
 	return ' '
 }
 
-func algebraicToUint8(algebraicSquare string) uint8 {
+func AlgebraicToUint8(algebraicSquare string) uint8 {
 	var ret uint8
 	ch1, ch2 := algebraicSquare[0], algebraicSquare[1]
 	ch1 -= 'a'
@@ -85,7 +85,7 @@ func (board *Board) LoadFen(fen string) (bool, string) {
 		}
 	}
 	if len(fenSplit[3]) == 2 {
-		board.enPassantSquare = algebraicToUint8(fenSplit[3])
+		board.enPassantSquare = AlgebraicToUint8(fenSplit[3])
 		board.enPassantCol = board.enPassantSquare & 0b111
 	}
 	{

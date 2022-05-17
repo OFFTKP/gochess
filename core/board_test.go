@@ -58,11 +58,11 @@ func TestFenLoadAndGet(t *testing.T) {
 
 func TestAlgebraicToUint8(t *testing.T) {
 	expected := []uint8{
-		algebraicToUint8("a1"), uint8(0),
-		algebraicToUint8("c3"), uint8(18),
-		algebraicToUint8("h8"), uint8(63),
-		algebraicToUint8("a8"), uint8(56),
-		algebraicToUint8("h1"), uint8(7),
+		AlgebraicToUint8("a1"), uint8(0),
+		AlgebraicToUint8("c3"), uint8(18),
+		AlgebraicToUint8("h8"), uint8(63),
+		AlgebraicToUint8("a8"), uint8(56),
+		AlgebraicToUint8("h1"), uint8(7),
 	}
 	for i := 0; i < len(expected); i += 2 {
 		if expected[i] != expected[i+1] {
