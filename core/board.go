@@ -51,7 +51,7 @@ type Board struct {
 	whiteRookHashMap   [64]uint64
 	whiteQueenHashMap  [64]uint64
 	whiteKingHashMap   [64]uint64
-	nextColorHashMap   [2]uint64  // 0 - white, 1 - black
+	nextColorHashMap   [7]uint64  // 0 - white, 6 - black
 	castlingHashMap    [16]uint64 // 0000 KQkq bits for speed
 	enPassantHashMap   [8]uint64  // to indicate the file of the en passant square
 
@@ -101,7 +101,7 @@ func (board *Board) init() {
 		board.blackKingHashMap[i] = rand.Uint64()
 	}
 	board.nextColorHashMap[0] = rand.Uint64()
-	board.nextColorHashMap[1] = rand.Uint64()
+	board.nextColorHashMap[6] = rand.Uint64()
 	for i := 0; i < 4; i++ {
 		board.castlingHashMap[i] = rand.Uint64()
 	}
@@ -127,11 +127,7 @@ func (board *Board) recalculateZobrist() {
 		}
 		emptyCopy ^= 1 << bit
 	}
-	if board.nextColor == c_White {
-		board.zobristHash ^= board.nextColorHashMap[0]
-	} else {
-		board.zobristHash ^= board.nextColorHashMap[1]
-	}
+	board.zobristHash ^= board.nextColorHashMap[board.nextColor]
 	castling := board.whiteKingsideCastle<<3 | board.whiteQueensideCastle<<2 | board.blackKingsideCastle<<1 | board.blackQueensideCastle
 	board.zobristHash ^= board.castlingHashMap[castling]
 	board.zobristHash ^= board.enPassantHashMap[board.enPassantCol]

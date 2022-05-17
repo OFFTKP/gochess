@@ -126,3 +126,11 @@ func BenchmarkMakeUnmakeMove(b *testing.B) {
 		}
 	}
 }
+
+func BenchmarkRecalculateZobristHash(b *testing.B) {
+	var board Board
+	board.LoadFen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+	for i := 0; i < b.N; i++ {
+		board.recalculateZobrist()
+	}
+}
