@@ -57,6 +57,7 @@ type Board struct {
 
 	// maps for all piece types (0-11) to avoid branching
 	PieceBBmap   [12]*uint64
+	ColorBBmap   [7]*uint64
 	PieceHashmap [12]*[64]uint64
 	zobristHash  uint64
 
@@ -79,6 +80,9 @@ func (board *Board) init() {
 	board.PieceBBmap = [12]*uint64{
 		&board.whitePawns, &board.whiteKnights, &board.whiteBishops, &board.whiteRooks, &board.whiteQueens, &board.whiteKing,
 		&board.blackPawns, &board.blackKnights, &board.blackBishops, &board.blackRooks, &board.blackQueens, &board.blackKing,
+	}
+	board.ColorBBmap = [7]*uint64{
+		&board.whiteSquares, nil, nil, nil, nil, nil, &board.blackSquares,
 	}
 	board.blackKingsideCastle = 0
 	board.blackQueensideCastle = 0

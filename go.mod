@@ -2,8 +2,6 @@ module github.com/OFFTKP/gochess
 
 go 1.17
 
-require github.com/fogleman/gg v1.3.0
-
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fredbi/uri v0.0.0-20181227131451-3dcfdacbaaf3 // indirect
@@ -25,6 +23,5 @@ require (
 
 require (
 	fyne.io/fyne/v2 v2.1.4
-	github.com/golang/freetype v0.0.0-20170609003504-e2365dfdc4a0 // indirect
 	golang.org/x/image v0.0.0-20220413100746-70e8d0d3baa9 // indirect
 )
