@@ -9,8 +9,7 @@ func TestKnightMoveCountEmpty(t *testing.T) {
 	var board Board
 	board.init()
 	for i := 0; i < 64; i++ {
-		*board.PieceBBmap[p_Knight] = uint64(1) << i
-		res := bits.OnesCount64(board.generateKnightMoves())
+		res := bits.OnesCount64(board.generateKnightMoves(i))
 		if res != int(knightMoveCountTable[i]) {
 			t.Errorf("Knight move count failed for square %d", i)
 		}
@@ -31,7 +30,7 @@ func TestKnightMoveCountObstacles(t *testing.T) {
 	for i := 0; i < len(testCases); i++ {
 		var board Board
 		board.LoadFen(testCases[i].fen)
-		res := board.generateKnightMoves()
+		res := board.generateKnightMoves(bits.TrailingZeros64(*board.PieceBBmap[board.nextColor+p_Knight]))
 		count := bits.OnesCount64(res)
 		if count != testCases[i].expectedMoves {
 			t.Errorf("Knight move count failed for i = %d\nExpected:%d\nGot     :%d", i, testCases[i].expectedMoves, count)

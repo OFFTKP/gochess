@@ -4,19 +4,36 @@ func (board *Board) generateBishopMoves() uint64 {
 	return 0
 }
 
-func getHorizontalSlide(square int, curRow uint8, rowIndex uint8) uint64 {
-	return uint64(slidingMoves[square][curRow]) << 8 * uint64(rowIndex)
+func (board *Board) generateRookMoves(square int) uint64 {
+	bb := getHorizontalSlide(square, ^board.emptySquares)
+	bb |= getVerticalSlide(square, ^board.emptySquares)
+	bb &= (^(*board.ColorBBmap[board.nextColor]))
+	return bb
+}
+
+func getHorizontalSlide(square int, bb uint64) uint64 {
+	rowIndex := square & 0xf8
+	curRow := (bb >> (uint64(rowIndex))) & 0xff
+	return slidingHorizontal[square][curRow]
+}
+
+func getVerticalSlide(square int, bb uint64) uint64 {
+	bbr := rotate90CW(bb)
+	colIndex := 7 - (square & 0x7)
+	curCol := (bbr >> (uint64(colIndex * 8))) & 0xff
+	return slidingVertical[square][curCol]
 }
 
 func generateSliding() {
 	for i := 0; i < 8; i++ {
 		// mask to remove our own piece
-		curPieceMask := ^(1 << i)
+		var curPieceMask uint64 = ^(1 << i)
+		i_8 := i * 8
 		// 256 different occupancy possibilities per line
 		for occ := 0; occ < 256; occ++ {
-			var possibleMoves uint8
-			possibleMoves &= uint8(curPieceMask)
-			for bit := i + 2; bit < 8; bit++ {
+			var possibleMoves uint64
+			possibleMoves &= curPieceMask
+			for bit := i + 1; bit < 8; bit++ {
 				if (occ & (1 << bit)) != 0 {
 					possibleMoves |= 1 << bit
 					break
@@ -24,7 +41,7 @@ func generateSliding() {
 					possibleMoves |= 1 << bit
 				}
 			}
-			for bit := i; bit > 0; bit-- {
+			for bit := i - 1; bit >= 0; bit-- {
 				if (occ & (1 << bit)) != 0 {
 					possibleMoves |= 1 << bit
 					break
@@ -32,14 +49,17 @@ func generateSliding() {
 					possibleMoves |= 1 << bit
 				}
 			}
-			for j := 0; j < 64; j += 8 {
-				slidingMoves[i+j][occ] = possibleMoves
+			for j := 0; j < 8; j += 1 {
+				j_8 := j * 8
+				slidingHorizontal[i+j_8][occ] = possibleMoves << j_8
+				slidingVertical[i_8+(7-j)][occ] = rotate90CCW(slidingHorizontal[i+j_8][occ])
 			}
 		}
 	}
 }
 
-var slidingMoves [64][256]uint8
+var slidingHorizontal [64][256]uint64
+var slidingVertical [64][256]uint64
 
 var bishopMoveCountTable [64]uint8 = [64]uint8{
 	0x7, 0x7, 0x7, 0x7, 0x7, 0x7, 0x7, 0x7,

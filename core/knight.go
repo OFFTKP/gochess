@@ -1,18 +1,7 @@
 package core
 
-import "math/bits"
-
-// Returns a bitboard of all the knight moves for all the knights
-func (board *Board) generateKnightMoves() uint64 {
-	knights := *board.PieceBBmap[board.nextColor+p_Knight]
-	var ret uint64
-	for knights != 0 {
-		bit := bits.TrailingZeros64(knights)
-		// Get moves & not occupied squares (by flipping our color bitboard)
-		ret |= knightMovesPerSquare[bit] & (^(*board.ColorBBmap[board.nextColor]))
-		knights ^= 1 << bit
-	}
-	return ret
+func (board *Board) generateKnightMoves(square int) uint64 {
+	return knightMovesPerSquare[square] & (^(*board.ColorBBmap[board.nextColor]))
 }
 
 var knightMovesPerSquare [64]uint64 = [64]uint64{

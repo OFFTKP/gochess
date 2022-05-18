@@ -63,7 +63,7 @@ type Board struct {
 	PieceHashmap [12]*[64]uint64
 	zobristHash  uint64
 
-	// general bitboards of all bitmaps together
+	// general bitboards of all pieces together
 	whiteSquares uint64
 	blackSquares uint64
 	emptySquares uint64

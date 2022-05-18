@@ -1,15 +1,7 @@
 package core
 
-import "math/bits"
-
-// Returns a bitboard of all the king moves for one king
-func (board *Board) generateKingMoves() uint64 {
-	king := *board.PieceBBmap[board.nextColor+p_King]
-	var ret uint64
-	bit := bits.TrailingZeros64(king)
-	// Get moves & not occupied squares (by flipping our color bitboard)
-	ret |= kingMovesPerSquare[bit] & (^(*board.ColorBBmap[board.nextColor]))
-	return ret
+func (board *Board) generateKingMoves(square int) uint64 {
+	return kingMovesPerSquare[square] & (^(*board.ColorBBmap[board.nextColor]))
 }
 
 var kingMovesPerSquare [64]uint64 = [64]uint64{
