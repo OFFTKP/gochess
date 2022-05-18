@@ -7,6 +7,8 @@ import (
 	"time"
 )
 
+var oneTimeInitialized bool = false
+
 const (
 	p_Pawn = iota
 	p_Knight
@@ -76,7 +78,15 @@ type Board struct {
 	fullmoveNumber  int
 }
 
+func oneTimeInit() {
+	rand.Seed(time.Now().UnixNano())
+	generateSliding()
+}
+
 func (board *Board) init() {
+	if !oneTimeInitialized {
+		oneTimeInit()
+	}
 	board.PieceBBmap = [12]*uint64{
 		&board.whitePawns, &board.whiteKnights, &board.whiteBishops, &board.whiteRooks, &board.whiteQueens, &board.whiteKing,
 		&board.blackPawns, &board.blackKnights, &board.blackBishops, &board.blackRooks, &board.blackQueens, &board.blackKing,
@@ -89,7 +99,6 @@ func (board *Board) init() {
 	board.whiteKingsideCastle = 0
 	board.whiteQueensideCastle = 0
 	board.enPassantSquare = 0xFF
-	rand.Seed(time.Now().UnixNano())
 	for i := 0; i < 64; i++ {
 		board.whitePawnHashMap[i] = rand.Uint64()
 		board.whiteKnightHashMap[i] = rand.Uint64()
