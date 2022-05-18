@@ -2,8 +2,8 @@ package core
 
 import (
 	"fmt"
-	"internal/itoa"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -66,7 +66,7 @@ func (uci *UCI) ParseCommand(com string) {
 		returnToGUI("uciok")
 	case "setoption":
 		if len(split) < 5 {
-			printError("Expected 4 parameters, got " + itoa.Itoa(len(split)-1))
+			printError("Expected 4 parameters, got " + strconv.Itoa(len(split)-1))
 			return
 		}
 		if split[1] != "name" {

@@ -4,6 +4,10 @@ func (board *Board) generateBishopMoves() uint64 {
 	return 0
 }
 
+func getHorizontalSlide(square int, curRow uint8, rowIndex uint8) uint64 {
+	return uint64(slidingMoves[square][curRow]) << 8 * uint64(rowIndex)
+}
+
 func generateSliding() {
 	for i := 0; i < 8; i++ {
 		// mask to remove our own piece
