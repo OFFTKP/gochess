@@ -60,6 +60,8 @@ func generateSliding() {
 
 var slidingHorizontal [64][256]uint64
 var slidingVertical [64][256]uint64
+var slidingDiagonal [64][256]uint64
+var slidingAntiDiagonal [64][256]uint64
 
 var bishopMoveCountTable [64]uint8 = [64]uint8{
 	0x7, 0x7, 0x7, 0x7, 0x7, 0x7, 0x7, 0x7,

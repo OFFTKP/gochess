@@ -3,6 +3,7 @@ package core
 import "math/bits"
 
 // Contains helpful functions/constants from https://www.chessprogramming.org/General_Setwise_Operations
+// Also read https://www.chessprogramming.org/Flipping_Mirroring_and_Rotating
 
 const (
 	notAFile uint64 = 0xfefefefefefefefe
@@ -78,4 +79,24 @@ func rotate90CW(b uint64) uint64 {
 
 func rotate90CCW(b uint64) uint64 {
 	return flipDiagA1H8(flipVertically(b))
+}
+
+func rotate45CW(b uint64) uint64 {
+	const k1 uint64 = 0xAAAAAAAAAAAAAAAA
+	const k2 uint64 = 0xCCCCCCCCCCCCCCCC
+	const k4 uint64 = 0xF0F0F0F0F0F0F0F0
+	b ^= k1 & (b ^ bits.RotateLeft64(b, -8))
+	b ^= k2 & (b ^ bits.RotateLeft64(b, -16))
+	b ^= k4 & (b ^ bits.RotateLeft64(b, -32))
+	return b
+}
+
+func rotate45CCW(b uint64) uint64 {
+	const k1 uint64 = 0x5555555555555555
+	const k2 uint64 = 0x3333333333333333
+	const k4 uint64 = 0x0f0f0f0f0f0f0f0f
+	b ^= k1 & (b ^ bits.RotateLeft64(b, -8))
+	b ^= k2 & (b ^ bits.RotateLeft64(b, -16))
+	b ^= k4 & (b ^ bits.RotateLeft64(b, -32))
+	return b
 }
