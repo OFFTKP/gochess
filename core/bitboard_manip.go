@@ -91,6 +91,16 @@ func rotate45CW(b uint64) uint64 {
 	return b
 }
 
+func unrotate45CW(b uint64) uint64 {
+	const k1 uint64 = 0xAAAAAAAAAAAAAAAA
+	const k2 uint64 = 0xCCCCCCCCCCCCCCCC
+	const k4 uint64 = 0xF0F0F0F0F0F0F0F0
+	b ^= k1 & (b ^ bits.RotateLeft64(b, 8))
+	b ^= k2 & (b ^ bits.RotateLeft64(b, 16))
+	b ^= k4 & (b ^ bits.RotateLeft64(b, 32))
+	return b
+}
+
 func rotate45CCW(b uint64) uint64 {
 	const k1 uint64 = 0x5555555555555555
 	const k2 uint64 = 0x3333333333333333
